@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.videoservice.mapper.VideoMapper">
+
+    <resultMap id="VideoResult" type="com.cy.videoservice.entity.Video">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="fileUrl" column="file_url"/>
+        <result property="coverUrl" column="cover_url"/>
+        <result property="uploaderId" column="uploader_id"/>
+        <result property="uploaderName" column="uploader_name"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="playCount" column="play_count"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="BaseColumns">
+        id, title, description, file_url, cover_url, uploader_id, uploader_name,
+        like_count, play_count, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.cy.videoservice.entity.Video" useGeneratedKeys="true" keyProperty="id">
+        insert into videos (title, description, file_url, cover_url, uploader_id, uploader_name, like_count, play_count, status)
+        values (#{title}, #{description}, #{fileUrl}, #{coverUrl}, #{uploaderId}, #{uploaderName},
+                #{likeCount}, #{playCount}, #{status})
+    </insert>
+
+    <select id="findById" parameterType="long" resultMap="VideoResult">
+        select <include refid="BaseColumns"/>
+        from videos
+        where id = #{id}
+    </select>
+
+    <select id="listAll" resultMap="VideoResult">
+        select <include refid="BaseColumns"/>
+        from videos
+        order by create_time desc
+    </select>
+
+    <select id="listActive" resultMap="VideoResult">
+        select <include refid="BaseColumns"/>
+        from videos
+        where status = 1
+        order by create_time desc
+    </select>
+
+    <select id="listByUploader" parameterType="long" resultMap="VideoResult">
+        select <include refid="BaseColumns"/>
+        from videos
+        where uploader_id = #{uploaderId}
+        order by create_time desc
+    </select>
+
+    <update id="increaseLike" parameterType="long">
+        update videos
+        set like_count = like_count + 1
+        where id = #{id}
+    </update>
+
+    <update id="increasePlay" parameterType="long">
+        update videos
+        set play_count = play_count + 1
+        where id = #{id}
+    </update>
+
+    <select id="findByIds" parameterType="list" resultMap="VideoResult">
+        select <include refid="BaseColumns"/>
+        from videos
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>

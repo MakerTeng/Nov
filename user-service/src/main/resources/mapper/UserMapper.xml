@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.userservice.mapper.UserMapper">
+
+    <resultMap id="UserResultMap" type="com.cy.userservice.entity.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="role" column="role"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <select id="findByUsername" parameterType="string" resultMap="UserResultMap">
+        select id, username, password, role, status, create_time, update_time
+        from users
+        where username = #{username}
+        limit 1
+    </select>
+
+    <insert id="insert" parameterType="com.cy.userservice.entity.User" useGeneratedKeys="true" keyProperty="id">
+        insert into users (username, password, role, status)
+        values (#{username}, #{password}, #{role}, #{status})
+    </insert>
+
+    <select id="findById" parameterType="long" resultMap="UserResultMap">
+        select id, username, password, role, status, create_time, update_time
+        from users
+        where id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="UserResultMap">
+        select id, username, password, role, status, create_time, update_time
+        from users
+        order by create_time desc
+    </select>
+</mapper>

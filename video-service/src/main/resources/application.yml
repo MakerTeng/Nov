@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: video-service
+  config:
+    import: "optional:nacos:video-service.yaml"
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+      config:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        file-extension: yaml
+  datasource:
+    url: jdbc:mysql://localhost:3306/company?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 123456
+
+mybatis:
+  mapper-locations: classpath:/mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+server:
+  port: 8081
+
+logging:
+  level:
+    com.cy: info

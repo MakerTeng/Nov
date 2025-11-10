@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: recommend-service
+  config:
+    import: "optional:nacos:recommend-service.yaml"
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+      config:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        file-extension: yaml
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: itheima
+    password: 123456
+    virtual-host: /hmall
+
+server:
+  port: 8085
+
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 3000
+        read-timeout: 5000

@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: log-service
+  config:
+    import: "optional:nacos:log-service.yaml"
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+      config:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        file-extension: yaml
+  datasource:
+    url: jdbc:mysql://localhost:3306/company?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 123456
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: itheima
+    password: 123456
+    virtual-host: /hmall
+
+mybatis:
+  mapper-locations: classpath:/mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+server:
+  port: 8084

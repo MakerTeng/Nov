@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.logservice.mapper.UserBehaviorLogMapper">
+
+    <resultMap id="LogResult" type="com.cy.logservice.entity.UserBehaviorLog">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="videoId" column="video_id"/>
+        <result property="action" column="action"/>
+        <result property="detail" column="detail"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.cy.logservice.entity.UserBehaviorLog" useGeneratedKeys="true" keyProperty="id">
+        insert into user_behavior_logs (user_id, video_id, action, detail)
+        values (#{userId}, #{videoId}, #{action}, #{detail})
+    </insert>
+
+    <select id="listByUser" parameterType="long" resultMap="LogResult">
+        select id, user_id, video_id, action, detail, create_time
+        from user_behavior_logs
+        where user_id = #{userId}
+        order by create_time desc
+    </select>
+
+    <select id="listByVideo" parameterType="long" resultMap="LogResult">
+        select id, user_id, video_id, action, detail, create_time
+        from user_behavior_logs
+        where video_id = #{videoId}
+        order by create_time desc
+    </select>
+</mapper>

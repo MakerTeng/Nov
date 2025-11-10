@@ -1,0 +1,19 @@
+# Dedicated HTTP port to avoid clashing with other services.
+# Current allocation:
+#   gateway: 8080
+#   video-service: 8081
+#   user-service: 8082
+#   log-service: 8084
+#   recommend-service: 8085
+# Pick 8083 for common to avoid overlaps.
+server:
+  port: 8083
+
+spring:
+  config:
+    import: "optional:nacos:common.properties"
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        file-extension: properties

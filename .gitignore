@@ -1,0 +1,29 @@
+# IDE artifacts
+.idea/
+.vscode/
+*.iml
+
+# Build outputs
+target/
+*/target/
+*.class
+
+# Logs & runtime data
+logs/
+run-logs/
+*.log
+derby.log
+sessionStore/
+
+# Tooling & caches
+tools/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Temporary files
+*.swp
+*.swo
+~*
