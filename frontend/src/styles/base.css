@@ -1,0 +1,14 @@
+:root {
+  --layout-sider-width: 220px;
+}
+
+body {
+  margin: 0;
+  font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #f5f6fa;
+  color: #1f2d3d;
+}
+
+#app {
+  min-height: 100vh;
+}
