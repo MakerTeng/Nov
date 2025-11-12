@@ -5,17 +5,17 @@ import com.cy.common.exception.ErrorCode;
 import com.cy.common.mq.LogEvent;
 import com.cy.common.model.ApiResponse;
 import com.cy.recommendservice.client.VideoClient;
+import com.cy.recommendservice.mapper.VideoActionMapper;
+import com.cy.recommendservice.model.VideoActionAggregate;
 import com.cy.recommendservice.model.VideoInfo;
 import com.cy.recommendservice.service.RecommendationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,32 +23,28 @@ import java.util.stream.Collectors;
 public class RecommendationServiceImpl implements RecommendationService {
 
     private final VideoClient videoClient;
-
-    private final Map<Long, Long> videoScores = new ConcurrentHashMap<>();
-    private final Map<Long, Set<Long>> userHistories = new ConcurrentHashMap<>();
+    private final VideoActionMapper videoActionMapper;
 
     @Override
     public List<VideoInfo> recommend(Long userId, int limit) {
-        if (limit <= 0) {
-            limit = 10;
-        }
-        Set<Long> watched = userHistories.getOrDefault(userId, Collections.emptySet());
-        List<Long> topVideoIds = videoScores.entrySet().stream()
-                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
-                .map(Map.Entry::getKey)
-                .filter(id -> !watched.contains(id))
-                .limit(limit)
+        int fetchLimit = limit <= 0 ? 10 : limit;
+        List<VideoActionAggregate> aggregates = videoActionMapper.aggregateByUser(userId, fetchLimit * 3, 600);
+        List<Long> rankedIds = aggregates.stream()
+                .sorted(Comparator.comparingDouble(this::score).reversed())
+                .map(VideoActionAggregate::getVideoId)
+                .limit(fetchLimit)
                 .collect(Collectors.toList());
 
-        List<VideoInfo> results = new ArrayList<>(fetchVideos(topVideoIds));
-        if (results.size() < limit) {
-            ApiResponse<List<VideoInfo>> allVideosResponse = videoClient.list();
-            List<VideoInfo> allVideos = safeData(allVideosResponse);
+        List<VideoInfo> results = new ArrayList<>(fetchVideos(rankedIds));
+        if (results.size() < fetchLimit) {
+            int fallbackSize = Math.min(fetchLimit * 3, 200);
+            ApiResponse<List<VideoInfo>> fallbackResponse = videoClient.list(1, fallbackSize);
+            List<VideoInfo> allVideos = safeData(fallbackResponse);
             for (VideoInfo video : allVideos) {
-                if (results.size() >= limit) {
+                if (results.size() >= fetchLimit) {
                     break;
                 }
-                if (watched.contains(video.getId()) || containsVideo(results, video.getId())) {
+                if (containsVideo(results, video.getId())) {
                     continue;
                 }
                 results.add(video);
@@ -59,16 +55,19 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Override
     public void handleLogEvent(LogEvent event) {
-        if (event == null || event.getVideoId() == null) {
-            return;
-        }
-        long delta = scoreDelta(event.getAction());
-        videoScores.merge(event.getVideoId(), delta, Long::sum);
-        if (event.getUserId() != null) {
-            userHistories
-                    .computeIfAbsent(event.getUserId(), id -> ConcurrentHashMap.newKeySet())
-                    .add(event.getVideoId());
-        }
+        // 按照新的权重算法改为直接读取数据库中的 video_actions，此处仅保留接口兼容
+    }
+
+    @Override
+    public List<VideoInfo> topN(int limit) {
+        int fetchLimit = limit <= 0 ? 10 : Math.min(limit, 50);
+        int fetchSize = Math.min(fetchLimit * 4, 200);
+        ApiResponse<List<VideoInfo>> response = videoClient.list(1, fetchSize);
+        List<VideoInfo> videos = safeData(response);
+        return videos.stream()
+                .sorted(Comparator.comparingLong(this::trendScore).reversed())
+                .limit(fetchLimit)
+                .collect(Collectors.toList());
     }
 
     private List<VideoInfo> fetchVideos(List<Long> ids) {
@@ -100,18 +99,31 @@ public class RecommendationServiceImpl implements RecommendationService {
         return response.getData() == null ? List.of() : response.getData();
     }
 
-    private long scoreDelta(String action) {
-        if (action == null) {
-            return 1;
-        }
-        return switch (action.toUpperCase()) {
-            case "LIKE" -> 3;
-            case "COMMENT" -> 2;
-            default -> 1;
-        };
-    }
-
     private boolean containsVideo(List<VideoInfo> videos, Long videoId) {
         return videos.stream().anyMatch(video -> video.getId().equals(videoId));
+    }
+
+    private double score(VideoActionAggregate aggregate) {
+        double watch = aggregate.getWatchScore() == null ? 0 : aggregate.getWatchScore();
+        double liked = aggregate.getLikedScore() == null ? 0 : Math.min(aggregate.getLikedScore(), 1.0);
+        double commented = aggregate.getCommentedScore() == null ? 0 : Math.min(aggregate.getCommentedScore(), 1.0);
+        return 0.6 * clamp(watch) + 0.3 * clamp(liked) + 0.1 * clamp(commented);
+    }
+
+    private double clamp(double value) {
+        if (value < 0) {
+            return 0;
+        }
+        if (value > 1) {
+            return 1;
+        }
+        return value;
+    }
+
+    private long trendScore(VideoInfo video) {
+        long play = video.getPlayCount() == null ? 0 : video.getPlayCount();
+        long like = video.getLikeCount() == null ? 0 : video.getLikeCount();
+        long comment = video.getCommentCount() == null ? 0 : video.getCommentCount();
+        return play + like * 3 + comment * 5;
     }
 }

@@ -11,7 +11,7 @@
       <el-table-column prop="username" label="用户名" />
       <el-table-column label="角色" width="140">
         <template #default="{ row }">
-          <el-tag :type="roleTagType(row.role)">{{ row.role }}</el-tag>
+          <el-tag :type="roleTagType(row.role)">{{ resolveRoleLabel(row.role) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="状态" width="140">
@@ -34,6 +34,7 @@ import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import userApi from '@/api/userApi';
 import type { UserProfile } from '@/store/auth';
+import { ROLE_LABELS } from '@/utils/roles';
 
 const loading = ref(false);
 const users = ref<UserProfile[]>([]);
@@ -48,6 +49,10 @@ function roleTagType(role: string) {
   if (role === 'ADMIN') return 'danger';
   if (role === 'CREATOR') return 'warning';
   return 'info';
+}
+
+function resolveRoleLabel(role: string) {
+  return ROLE_LABELS[role] || role;
 }
 
 async function loadUsers() {

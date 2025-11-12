@@ -9,6 +9,9 @@
         <result property="description" column="description"/>
         <result property="fileUrl" column="file_url"/>
         <result property="coverUrl" column="cover_url"/>
+        <result property="tags" column="tags"/>
+        <result property="durationSec" column="duration_sec"/>
+        <result property="commentCount" column="comment_count"/>
         <result property="uploaderId" column="uploader_id"/>
         <result property="uploaderName" column="uploader_name"/>
         <result property="likeCount" column="like_count"/>
@@ -19,14 +22,15 @@
     </resultMap>
 
     <sql id="BaseColumns">
-        id, title, description, file_url, cover_url, uploader_id, uploader_name,
-        like_count, play_count, status, create_time, update_time
+        id, title, description, file_url, cover_url, tags, duration_sec, comment_count,
+        uploader_id, uploader_name, like_count, play_count, status, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="com.cy.videoservice.entity.Video" useGeneratedKeys="true" keyProperty="id">
-        insert into videos (title, description, file_url, cover_url, uploader_id, uploader_name, like_count, play_count, status)
-        values (#{title}, #{description}, #{fileUrl}, #{coverUrl}, #{uploaderId}, #{uploaderName},
-                #{likeCount}, #{playCount}, #{status})
+        insert into videos (title, description, file_url, cover_url, tags, duration_sec, comment_count,
+                            uploader_id, uploader_name, like_count, play_count, status, create_time, update_time)
+        values (#{title}, #{description}, #{fileUrl}, #{coverUrl}, #{tags}, #{durationSec}, #{commentCount},
+                #{uploaderId}, #{uploaderName}, #{likeCount}, #{playCount}, #{status}, #{createTime}, #{updateTime})
     </insert>
 
     <select id="findById" parameterType="long" resultMap="VideoResult">
@@ -48,6 +52,16 @@
         order by create_time desc
     </select>
 
+    <select id="listPaged" resultMap="VideoResult">
+        select <include refid="BaseColumns"/>
+        from videos
+        <if test="!includeInactive">
+            where status = 1
+        </if>
+        order by create_time desc
+        limit #{offset}, #{size}
+    </select>
+
     <select id="listByUploader" parameterType="long" resultMap="VideoResult">
         select <include refid="BaseColumns"/>
         from videos
@@ -67,6 +81,12 @@
         where id = #{id}
     </update>
 
+    <update id="increasePlayByFile" parameterType="string">
+        update videos
+        set play_count = play_count + 1
+        where file_url = #{fileUrl}
+    </update>
+
     <select id="findByIds" parameterType="list" resultMap="VideoResult">
         select <include refid="BaseColumns"/>
         from videos
@@ -75,4 +95,8 @@
             #{id}
         </foreach>
     </select>
+
+    <delete id="delete" parameterType="long">
+        delete from videos where id = #{id}
+    </delete>
 </mapper>

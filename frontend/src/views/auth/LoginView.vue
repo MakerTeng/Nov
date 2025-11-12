@@ -14,6 +14,7 @@
           <el-button type="primary" :loading="loading" class="submit-btn" @click="handleSubmit">
             登录
           </el-button>
+          <el-button text @click="router.push({ name: 'register' })">注册新账号</el-button>
         </el-form-item>
       </el-form>
     </div>

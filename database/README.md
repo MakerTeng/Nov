@@ -1,10 +1,20 @@
 # Database Schema
 
-This project uses a single MySQL schema named `company`. Run `schema.sql` to create all tables and insert demo data.
+This project uses a single MySQL schema named `company`. Run `schema.sql` once to create all tables and insert demo data:
 
 ```sql
 source database/schema.sql;
 ```
+
+When pulling new code, apply the migrations located in `database/migrations/` **in numeric order**. Every script is idempotent (they query `information_schema` before altering) so it is safe to run them multiple times:
+
+```sql
+source database/migrations/002_add_email_column.sql;
+source database/migrations/003_create_video_actions_table.sql;
+source database/migrations/004_update_videos_table.sql;
+```
+
+`003` creates the `video_actions` table used by log-service/recommend-service, and `004` aligns the `videos` table with the latest columns (longer URLs, stats columns, uploader info, nullable audit fields, etc.).
 
 ## Tables
 

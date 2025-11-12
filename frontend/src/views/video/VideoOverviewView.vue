@@ -18,6 +18,20 @@
             <el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '上线' : '草稿' }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="160">
+          <template #default="{ row }">
+            <el-button size="small" type="primary" @click.stop="preview(row)">播放</el-button>
+            <el-button
+              v-if="canDelete(row)"
+              size="small"
+              type="danger"
+              plain
+              @click.stop="handleDelete(row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-card>
 
@@ -66,7 +80,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { videoApi, type VideoInfo } from '@/api/videoApi';
 import logApi, { type UserBehaviorLog } from '@/api/logApi';
 import { useAuthStore } from '@/store/auth';
@@ -80,6 +94,7 @@ const logLoading = ref(false);
 const videoLogs = ref<UserBehaviorLog[]>([]);
 
 const isAdmin = computed(() => authStore.role === 'ADMIN');
+const userId = computed(() => authStore.profile?.id ?? 0);
 const title = computed(() => (isAdmin.value ? '全量视频列表' : '我上传的视频'));
 const drawerTitle = computed(() => (selectedVideo.value ? `视频详情 - ${selectedVideo.value.title}` : ''));
 
@@ -98,7 +113,7 @@ const metrics = computed(() => {
 async function loadVideos() {
   try {
     loading.value = true;
-    videos.value = isAdmin.value ? await videoApi.listAll() : await videoApi.listMine();
+    videos.value = isAdmin.value ? await videoApi.listAll({ page: 1, size: 200 }) : await videoApi.listMine();
   } catch (error) {
     ElMessage.error('获取视频数据失败，请确认权限');
   } finally {
@@ -123,6 +138,34 @@ function handleRowClick(row: VideoInfo) {
   drawerVisible.value = true;
   if (row.id && isAdmin.value) {
     loadLogs(row.id);
+  }
+}
+
+function preview(row: VideoInfo) {
+  selectedVideo.value = row;
+  drawerVisible.value = true;
+  if (row.id && isAdmin.value) {
+    loadLogs(row.id);
+  }
+}
+
+function canDelete(row: VideoInfo) {
+  return isAdmin.value || row.uploaderId === userId.value;
+}
+
+async function handleDelete(row: VideoInfo) {
+  if (!row.id) return;
+  if (!canDelete(row)) {
+    ElMessage.warning('只能删除自己上传的视频');
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(`确认删除「${row.title}」？该操作不可恢复。`, '提示', { type: 'warning' });
+    await videoApi.remove(row.id);
+    ElMessage.success('删除成功');
+    await loadVideos();
+  } catch (error) {
+    if (error === 'cancel' || error === 'close') return;
   }
 }
 

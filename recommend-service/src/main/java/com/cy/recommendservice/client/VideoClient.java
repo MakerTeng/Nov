@@ -7,6 +7,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -17,7 +18,7 @@ public interface VideoClient {
     ApiResponse<List<VideoInfo>> batch(@RequestBody BatchRequest request);
 
     @GetMapping("/list")
-    ApiResponse<List<VideoInfo>> list();
+    ApiResponse<List<VideoInfo>> list(@RequestParam("page") int page, @RequestParam("size") int size);
 
     class BatchRequest {
         @NotEmpty

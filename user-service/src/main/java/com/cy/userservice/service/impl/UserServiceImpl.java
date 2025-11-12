@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Locale;
@@ -37,21 +38,28 @@ public class UserServiceImpl implements UserService {
     public Long register(UserRegisterRequest request) {
         User existing = userMapper.findByUsername(request.getUsername());
         if (existing != null) {
-            throw new BizException(ErrorCode.USERNAME_EXISTS, "username already exists");
+            throw new BizException(ErrorCode.USERNAME_EXISTS, "用户名已存在");
+        }
+        if (StringUtils.hasText(request.getEmail())) {
+            User emailUser = userMapper.findByEmail(request.getEmail());
+            if (emailUser != null) {
+                throw new BizException(ErrorCode.VALIDATION_ERROR, "邮箱已被使用");
+            }
         }
         String requestRole = request.getRole() == null
                 ? UserRole.USER.getCode()
                 : request.getRole().toUpperCase(Locale.ROOT);
         if (!UserRole.contains(requestRole)) {
-            throw new BizException(ErrorCode.VALIDATION_ERROR, "invalid role");
+            throw new BizException(ErrorCode.VALIDATION_ERROR, "用户角色非法");
         }
         if (UserRole.isAdmin(requestRole)) {
-            throw new BizException(ErrorCode.FORBIDDEN, "admin accounts must be created by existing admins");
+            throw new BizException(ErrorCode.FORBIDDEN, "管理员账号需由已有管理员创建");
         }
 
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(request.getEmail());
         user.setRole(requestRole);
         user.setStatus(1);
         userMapper.insert(user);
@@ -62,10 +70,10 @@ public class UserServiceImpl implements UserService {
     public UserLoginResponse login(UserLoginRequest request) {
         User user = userMapper.findByUsername(request.getUsername());
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BizException(ErrorCode.BAD_CREDENTIALS, "username or password is incorrect");
+            throw new BizException(ErrorCode.BAD_CREDENTIALS, "用户名或密码错误");
         }
         if (!Objects.equals(user.getStatus(), 1)) {
-            throw new BizException(ErrorCode.FORBIDDEN, "account is disabled");
+            throw new BizException(ErrorCode.FORBIDDEN, "账号已被禁用");
         }
         LoginUser loginUser = LoginUser.builder()
                 .userId(user.getId())
@@ -103,6 +111,7 @@ public class UserServiceImpl implements UserService {
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .email(user.getEmail())
                 .role(user.getRole())
                 .status(user.getStatus())
                 .build();

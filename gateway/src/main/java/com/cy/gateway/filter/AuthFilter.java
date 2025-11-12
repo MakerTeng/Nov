@@ -31,6 +31,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
     private static final List<String> WHITE_LIST = List.of(
             "/api/user/login",
             "/api/user/register",
+            "/api/video/media/**",
             "/actuator/**"
     );
 
@@ -42,7 +43,8 @@ public class AuthFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         if (HttpMethod.OPTIONS.equals(request.getMethod()) || isWhiteList(request.getPath().value())) {
-            return chain.filter(exchange);
+            ServerHttpRequest forwardedRequest = ensureHeaders(exchange.getRequest());
+            return chain.filter(exchange.mutate().request(forwardedRequest).build());
         }
         String token = resolveToken(request);
         if (token == null) {
@@ -60,6 +62,17 @@ public class AuthFilter implements GlobalFilter, Ordered {
                 .header(SecurityConstants.HEADER_USER_ROLE, loginUser.getRole())
                 .build();
         return chain.filter(exchange.mutate().request(mutated).build());
+    }
+
+    private ServerHttpRequest ensureHeaders(ServerHttpRequest request) {
+        if (request.getHeaders().containsKey(SecurityConstants.HEADER_USER_ID)) {
+            return request;
+        }
+        return request.mutate()
+                .header(SecurityConstants.HEADER_USER_ID, "0")
+                .header(SecurityConstants.HEADER_USER_ROLE, "GUEST")
+                .header(SecurityConstants.HEADER_USER_NAME, "guest")
+                .build();
     }
 
     private boolean isWhiteList(String path) {

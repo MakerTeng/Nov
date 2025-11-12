@@ -15,6 +15,10 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: 123456
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
 
 mybatis:
   mapper-locations: classpath:/mapper/*.xml
@@ -23,7 +27,15 @@ mybatis:
 
 server:
   port: 8081
+  tomcat:
+    max-swallow-size: -1
+    max-http-form-post-size: -1
 
 logging:
   level:
     com.cy: info
+
+video:
+  storage:
+    location: ${VIDEO_STORAGE_PATH:videos}
+    media-prefix: /api/video/media

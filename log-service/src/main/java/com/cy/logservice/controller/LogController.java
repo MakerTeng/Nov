@@ -5,8 +5,10 @@ import com.cy.common.exception.ErrorCode;
 import com.cy.common.model.ApiResponse;
 import com.cy.common.security.SecurityConstants;
 import com.cy.logservice.dto.LogCollectRequest;
+import com.cy.logservice.dto.VideoActionRequest;
 import com.cy.logservice.entity.UserBehaviorLog;
 import com.cy.logservice.service.LogService;
+import com.cy.logservice.service.VideoActionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import java.util.List;
 public class LogController {
 
     private final LogService logService;
+    private final VideoActionService videoActionService;
 
     @PostMapping("/collect")
     public ApiResponse<Long> collect(@Valid @RequestBody LogCollectRequest request, HttpServletRequest servletRequest) {
@@ -34,9 +37,16 @@ public class LogController {
         return ApiResponse.success(logId);
     }
 
+    @PostMapping("/video/action")
+    public ApiResponse<Long> recordAction(@Valid @RequestBody VideoActionRequest request, HttpServletRequest servletRequest) {
+        Long userId = requireUser(servletRequest);
+        Long id = videoActionService.record(userId, request);
+        return ApiResponse.success(id);
+    }
+
     @GetMapping("/user/{userId}")
     public ApiResponse<List<UserBehaviorLog>> byUser(@PathVariable Long userId, HttpServletRequest servletRequest) {
-        ensureAdmin(servletRequest);
+        ensureSelfOrAdmin(userId, servletRequest);
         return ApiResponse.success(logService.listByUser(userId));
     }
 
@@ -52,6 +62,17 @@ public class LogController {
             throw new BizException(ErrorCode.UNAUTHORIZED, "missing user information");
         }
         return Long.parseLong(userId);
+    }
+
+    private void ensureSelfOrAdmin(Long targetUserId, HttpServletRequest request) {
+        Long requesterId = requireUser(request);
+        String role = request.getHeader(SecurityConstants.HEADER_USER_ROLE);
+        if (targetUserId.equals(requesterId)) {
+            return;
+        }
+        if (role == null || !role.equalsIgnoreCase("ADMIN")) {
+            throw new BizException(ErrorCode.FORBIDDEN, "admin role required");
+        }
     }
 
     private void ensureAdmin(HttpServletRequest request) {

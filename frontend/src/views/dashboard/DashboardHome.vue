@@ -1,6 +1,11 @@
 <template>
-  <div class="dashboard-home">
-    <component :is="currentComponent" v-bind="componentProps" :loading="loading" />
+<div class="dashboard-home">
+    <component
+      :is="currentComponent"
+      v-bind="componentProps"
+      :loading="loading"
+      @refresh="handleRefresh"
+    />
   </div>
 </template>
 
@@ -47,7 +52,7 @@ const componentProps = computed(() => {
 
 async function loadAdminData() {
   adminUsers.value = await userApi.listAll();
-  adminVideos.value = await videoApi.listAll();
+  adminVideos.value = await videoApi.listAll({ page: 1, size: 200 });
 }
 
 async function loadCreatorData() {
@@ -78,6 +83,10 @@ async function loadData() {
 
 onMounted(loadData);
 watch(role, loadData);
+
+function handleRefresh() {
+  loadData();
+}
 </script>
 
 <style scoped>

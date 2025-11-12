@@ -11,11 +11,15 @@ public interface VideoService {
 
     VideoResponse findById(Long id, boolean increasePlay);
 
-    List<VideoResponse> listAll(boolean includeInactive);
+    List<VideoResponse> listAll(boolean includeInactive, int page, int size);
 
     List<VideoResponse> listMine(Long userId);
 
     void like(Long id);
 
     List<VideoResponse> findByIds(List<Long> ids);
+
+    void delete(Long id, Long operatorId, boolean operatorIsAdmin);
+
+    void recordPlayback(String relativePath);
 }

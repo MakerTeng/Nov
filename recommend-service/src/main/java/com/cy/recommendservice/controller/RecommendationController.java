@@ -37,6 +37,23 @@ public class RecommendationController {
         return ApiResponse.success(recommendationService.recommend(userId, limit));
     }
 
+    @GetMapping("/videos")
+    public ApiResponse<List<VideoInfo>> recommendWithQuery(@RequestParam(required = false) Long userId,
+                                                           @RequestParam(defaultValue = "10") int limit,
+                                                           HttpServletRequest request) {
+        if (userId == null) {
+            Long current = resolveUserId(request);
+            return ApiResponse.success(recommendationService.recommend(current, limit));
+        }
+        ensureAdmin(request);
+        return ApiResponse.success(recommendationService.recommend(userId, limit));
+    }
+
+    @GetMapping("/topN")
+    public ApiResponse<List<VideoInfo>> topN(@RequestParam(defaultValue = "10") int limit) {
+        return ApiResponse.success(recommendationService.topN(limit));
+    }
+
     private Long resolveUserId(HttpServletRequest request) {
         String userId = request.getHeader(SecurityConstants.HEADER_USER_ID);
         if (userId == null) {

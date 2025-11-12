@@ -3,9 +3,12 @@ import pinia from '@/store';
 import { useAuthStore } from '@/store/auth';
 
 const LoginView = () => import('@/views/auth/LoginView.vue');
+const RegisterView = () => import('@/views/auth/RegisterView.vue');
 const DashboardHome = () => import('@/views/dashboard/DashboardHome.vue');
 const UserListView = () => import('@/views/user/UserListView.vue');
 const VideoOverviewView = () => import('@/views/video/VideoOverviewView.vue');
+const VideoUploadView = () => import('@/views/video/VideoUploadView.vue');
+const VideoPlayerView = () => import('@/views/video/VideoPlayerView.vue');
 const LogAnalyticsView = () => import('@/views/log/LogAnalyticsView.vue');
 const RecommendDebugView = () => import('@/views/recommend/RecommendDebugView.vue');
 const ProfileView = () => import('@/views/profile/ProfileView.vue');
@@ -19,6 +22,12 @@ export const routes: RouteRecordRaw[] = [
     name: 'login',
     component: LoginView,
     meta: { public: true, title: '登录' }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: RegisterView,
+    meta: { public: true, title: '注册' }
   },
   {
     path: '/',
@@ -43,6 +52,18 @@ export const routes: RouteRecordRaw[] = [
         name: 'videos',
         component: VideoOverviewView,
         meta: { requiresAuth: true, roles: ['ADMIN', 'CREATOR'], title: '视频管理' }
+      },
+      {
+        path: 'video/upload',
+        name: 'video-upload',
+        component: VideoUploadView,
+        meta: { requiresAuth: true, title: '视频上传' }
+      },
+      {
+        path: 'video/play',
+        name: 'video-play',
+        component: VideoPlayerView,
+        meta: { requiresAuth: true, title: '视频播放' }
       },
       {
         path: 'logs',
@@ -99,7 +120,7 @@ router.beforeEach((to, from, next) => {
     }
   }
 
-  if (to.name === 'login' && authStore.isLoggedIn) {
+  if ((to.name === 'login' || to.name === 'register') && authStore.isLoggedIn) {
     next({ name: 'dashboard' });
     return;
   }

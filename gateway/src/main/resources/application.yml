@@ -2,7 +2,9 @@ spring:
   application:
     name: gateway
   config:
-    import: "optional:nacos:gateway.yaml"
+    import: optional:nacos:gateway.yaml
+  codec:
+    max-in-memory-size: 512MB
   cloud:
     nacos:
       discovery:
@@ -33,7 +35,9 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: "*"
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://127.0.0.1:5173"
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true

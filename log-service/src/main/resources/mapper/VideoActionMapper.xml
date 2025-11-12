@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.logservice.mapper.VideoActionMapper">
+
+    <insert id="insert" parameterType="com.cy.logservice.entity.VideoAction" useGeneratedKeys="true" keyProperty="id">
+        insert into video_actions (user_id, video_id, action, weight, create_time)
+        values (#{userId}, #{videoId}, #{action}, #{weight}, #{createTime})
+    </insert>
+</mapper>

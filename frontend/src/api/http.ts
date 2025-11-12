@@ -9,6 +9,8 @@ import router from '@/router';
 import pinia from '@/store';
 import { useAuthStore } from '@/store/auth';
 
+export const API_BASE_URL = 'http://localhost:8080';
+
 export interface ApiResponse<T> {
   code: number;
   message: string;
@@ -16,8 +18,8 @@ export interface ApiResponse<T> {
 }
 
 const http = axios.create({
-  baseURL: 'http://localhost:8080',
-  timeout: 10000
+  baseURL: API_BASE_URL,
+  timeout: 6000000
 });
 
 function readTokenFromStorage(): string | null {
@@ -41,7 +43,9 @@ http.interceptors.request.use((config) => {
     headers.set('Authorization', `Bearer ${token}`);
   }
   headers.set('Accept', 'application/json');
-  headers.set('Content-Type', 'application/json');
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
   config.headers = headers;
   return config;
 });
@@ -57,13 +61,16 @@ http.interceptors.response.use(
   },
   (error: AxiosError<ApiResponse<unknown>>) => {
     const status = error.response?.status;
-    if (status === 401 || status === 403) {
+    const message = error.response?.data?.message || error.message || '请求异常';
+
+    if (status === 401) {
       const authStore = useAuthStore(pinia);
       authStore.logout();
       ElMessage.warning('登录已过期，请重新登录');
       router.replace({ name: 'login' });
+    } else if (status === 403) {
+      ElMessage.error(message || '暂无权限访问该资源');
     } else {
-      const message = error.response?.data?.message || error.message || '请求异常';
       ElMessage.error(message);
     }
     return Promise.reject(error);
@@ -77,6 +84,11 @@ export async function get<T>(url: string, config?: AxiosRequestConfig) {
 
 export async function post<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
   const response = await http.post<ApiResponse<T>>(url, data, config);
+  return (response.data.data ?? null) as T;
+}
+
+export async function del<T>(url: string, config?: AxiosRequestConfig) {
+  const response = await http.delete<ApiResponse<T>>(url, config);
   return (response.data.data ?? null) as T;
 }
 

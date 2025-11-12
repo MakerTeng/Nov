@@ -13,6 +13,9 @@ public class VideoResponse {
     private String description;
     private String fileUrl;
     private String coverUrl;
+    private String tags;
+    private Integer durationSec;
+    private Long commentCount;
     private Long uploaderId;
     private String uploaderName;
     private Long likeCount;

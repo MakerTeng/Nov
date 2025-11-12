@@ -16,11 +16,19 @@ public interface VideoMapper {
 
     List<Video> listActive();
 
+    List<Video> listPaged(@Param("includeInactive") boolean includeInactive,
+                          @Param("offset") int offset,
+                          @Param("size") int size);
+
     List<Video> listByUploader(Long uploaderId);
 
     int increaseLike(@Param("id") Long id);
 
     int increasePlay(@Param("id") Long id);
 
+    int increasePlayByFile(@Param("fileUrl") String fileUrl);
+
     List<Video> findByIds(@Param("ids") List<Long> ids);
+
+    int delete(@Param("id") Long id);
 }

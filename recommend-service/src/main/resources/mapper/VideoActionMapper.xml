@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.recommendservice.mapper.VideoActionMapper">
+
+    <select id="aggregateByUser" resultType="com.cy.recommendservice.model.VideoActionAggregate">
+        SELECT
+            video_id AS videoId,
+            AVG(CASE WHEN action = 'view' THEN (LEAST(weight, #{watchCap}) + 0.0) / #{watchCap} END) AS watchScore,
+            AVG(CASE WHEN action = 'like' THEN weight END) AS likedScore,
+            AVG(CASE WHEN action = 'comment' THEN weight END) AS commentedScore,
+            MAX(create_time) AS lastActionTime
+        FROM video_actions
+        WHERE user_id = #{userId}
+        GROUP BY video_id
+        ORDER BY lastActionTime DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

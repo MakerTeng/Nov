@@ -10,4 +10,6 @@ public interface RecommendationService {
     List<VideoInfo> recommend(Long userId, int limit);
 
     void handleLogEvent(LogEvent event);
+
+    List<VideoInfo> topN(int limit);
 }
